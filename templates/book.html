@@ -1,0 +1,509 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    {% for book in data %}
+        <div class="profile_container_top">
+            <div class="item-c"><img id="logo_profile" src="../static/logo.png" alt="book cover"></div>
+            <div class="item-a book_profile_author">{{ book.author }}</div>
+            <div class="item-b book_profile_book_title">{{ book.title }}</div>
+            <div class="item-d">
+                <p class="book_profile_titles">Page count:</p>
+                <div class="book_profile_text">{{ book.pages }}</div>
+                <br>
+                <p class="book_profile_titles">ISBN:</p>
+                <div class="book_profile_text">{{ book.isbn }}</div>
+                <br>
+                <p class="book_profile_titles">Genre:</p>
+                <div class="book_profile_text">{{ book.genre }}</div>
+                <br>
+                {% if book.owner %}
+                    <p class="book_profile_titles">Belongs to:</p>
+                    <div class="book_profile_text">{{ book.owner }}</div>
+                {% endif %}
+            </div>
+            <div class="item-e">
+                <p class="book_profile_titles">Started reading:</p>
+                {% if book.started %}
+                    <div class="book_profile_text">{{ book.started }}</div>
+                    <br>
+                    <p class="book_profile_titles">Finished reading:</p>
+                    {% if book.finished %}
+                        <div class="book_profile_text">{{ book.finished }}</div>
+                    {% else %}
+                        <div class="book_profile_text">haven't finished reading</div>
+                    {% endif %}
+                {% else %}
+                    <div class="book_profile_text">haven't started reading</div>
+                {% endif %}
+                <br>
+                <p class="book_profile_titles">Rating:</p>
+                {% if book.rating %}
+                    <div class="book_profile_text">{{ book.rating }}</div>
+                {% else %}
+                    <div class="book_profile_text">no rating</div>
+                {% endif %}
+            </div>
+
+            <div class="item-f">
+                <p class="book_profile_titles">Lending history</p>
+                <button id="add_book" title="Lend a book" class="inner"
+                        data-toggle="modal"
+                        data-target="#bookLendingModal"
+                        data-bookid="{{ book.book_id }}">
+                    <img class="img_btn" src="../static/add_book.gif" alt="Lend a book">
+                </button>
+                {% if not lendings %}
+                    <p><i>There is no lending history for this book.</i></p>
+                {% else %}
+                    <table class="table table-striped">
+                        <tr>
+                            <th>Lent</th>
+                            <th>Returned</th>
+                            <th>Lent to</th>
+                            <th></th>
+                        </tr>
+                        {% for record in lendings %}
+                            <tr>
+                                <td>{{ record.lent_date }}</td>
+                                {% if not record.returned %}
+                                    <td><i>Not returned yet</i></td>
+                                    <td>{{ record.borrower }}</td>
+                                {% else %}
+                                    <td>{{ record.returned }}</td>
+                                    <td>{{ record.borrower }}</td>
+                                {% endif %}
+                                <td>
+                                    <div class="book_lend_options">
+                                        <img class="book_lend_options_image"
+                                             onclick="showOptionsFor('lendOpt{{ record.lend_id }}')"
+                                             src="../static/options.svg"
+                                             alt="options"/>
+                                        <div id="lendOpt{{ record.lend_id }}" class="book_lend_options_content">
+                                            <a data-toggle="modal"
+                                               data-target="#bookLendingModal"
+                                               data-bookid="{{ book.book_id }}"
+                                               data-lendid="{{ record.lend_id }}"
+                                               data-lenddata="{{ record }}">
+                                                Edit lending
+                                            </a>
+                                            <a data-toggle="modal"
+                                               data-target="#deleteBookLendingConfirmationModal"
+                                               data-bookid="{{ book.book_id }}"
+                                               data-lendid="{{ record.lend_id }}">
+                                                Delete lending
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                {% endif %}
+            </div>
+
+            <div class="item-g">
+                <div class="book_options">
+                    <img class="book_options_image"
+                         onclick="showOptionsFor('opt{{ book.book_id }}')"
+                         src="../static/options.svg"
+                         alt="options"/>
+
+                    <div id="opt{{ book.book_id }}" class="book_options_content">
+                        <a data-toggle="modal"
+                           data-target="#editBookModal"
+                           data-bookdata="{{ book }}"
+                           data-bookid="{{ book.book_id }}">
+                            Edit book
+                        </a>
+                        <a data-toggle="modal"
+                           data-target="#deleteBookConfirmationModal"
+                           data-bookid="{{ book.book_id }}">
+                            Delete book
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="profile_container_notes">
+        <div class="item-h"><h5 class="book_profile_titles">My Notes</h5></div>
+        {% for book in data %}
+            <div class="item-j">
+                <div class="note_options">
+                    <img class="note_options_image"
+                         onclick="showOptionsFor('noteOpt{{ book.book_id }}')"
+                         src="../static/options.svg"
+                         alt="options"/>
+                    <div id="noteOpt{{ book.book_id }}" class="note_options_content">
+                        <a data-toggle="modal"
+                           data-target="#editNoteModal"
+                                {% if book.notes %}
+                           data-notetext="{{ book.notes }}"
+                                {% endif %}
+                           data-bookid="{{ book.book_id }}">
+                            Edit note
+                        </a>
+                        {% if book.notes %}
+                            <a data-toggle="modal"
+                               data-target="#deleteNoteConfirmationModal"
+                               data-bookid="{{ book.book_id }}">
+                                Delete note
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if book.notes %}
+                <div class="item-k quote_sand_bg_profile">
+                    <p class="note_text">{{ book.notes }}</p>
+                </div>
+            {% else %}
+                <div class="item-k">No notes found</div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="profile_container_quotes">
+
+        <div class="quote_brown_bg_profile">
+            <div class="quotes_profile"><h5 class="book_profile_titles">Quotes</h5></div>
+            {% if not quotes %}
+                <div class="item-k">No quotes found</div>
+            {% else %}
+                {% for quote in quotes %}
+                    <div class="quote_sand_bg_profile">
+                        <div class="book_quotes_container">
+                            <div class="quote-text-item">
+                                <img id="quote_sign" src="../static/quote_mark.gif" alt="quotes">
+                                <p class="quote_text">{{ quote.quote }}</p>
+                                <br>
+                            </div>
+                            <div class="quote-options-item">
+                                <div class="book_quote_options">
+                                    <img class="book_quote_options_image"
+                                         onclick="showOptionsFor('quoteOpt{{ quote.quote_id }}')"
+                                         src="../static/options.svg"
+                                         alt="options"/>
+                                    <div id="quoteOpt{{ quote.quote_id }}" class="book_quote_options_content">
+                                        <a data-toggle="modal"
+                                           data-target="#editBookQuoteModal"
+                                           data-quotetext="{{ quote.quote }}"
+                                           data-quoteid="{{ quote.quote_id }}"
+                                           data-bookid="{{ quote.book_id }}">
+                                            Edit quote
+                                        </a>
+                                        <a data-toggle="modal"
+                                           data-target="#deleteBookQuoteConfirmationModal"
+                                           data-quoteid="{{ quote.quote_id }}"
+                                           data-bookid="{{ quote.book_id }}">
+                                            Delete quote
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- add a new quote -->
+    {% for book in data %}
+        <div class=" container_new_quote">
+            <h2 id="add_quote">ADD A NEW QUOTE</h2>
+            <form id="new_quote" action="/book/{{ book.book_id }}/new-quote" method="post" autocomplete="off">
+                <div class="form-group" id="quote_quote">
+                    <textarea autocomplete="off" class="form-control" name="quote" contenteditable="true"
+                              placeholder="Type your quote" cols="30" rows="5" required="required"></textarea>
+                </div>
+                <br>
+                <button class="btn btn-light" type="submit" id="quote_btn">+ Add</button>
+            </form>
+        </div>
+    {% endfor %}
+
+    <div class="modal fade" id="deleteBookConfirmationModal" tabindex="-1" role="dialog"
+         aria-labelledby="deleteBookConfirmationModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteBookConfirmationModalLabel">
+                        Are you sure you want to delete this book?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button id="confirmBookDelete" type="button" class="btn btn-light" data-dismiss="modal">
+                        Confirm
+                    </button>
+                    <input class="form-control hidden" type="number" name="update_book_id" id="update_book_id">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ------ Note modals ------ #}
+    <div class="modal fade" id="editNoteModal" tabindex="-1" role="dialog"
+         aria-labelledby="editNoteModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editNoteModalLabel">Edit note</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="edit-note-form" action="" method="POST">
+                    <div class="modal-body">
+                        <textarea class="form-control" name="note_text" id="note_text"
+                                  placeholder="Notes..." required="required"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-light">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteNoteConfirmationModal" tabindex="-1" role="dialog"
+         aria-labelledby="deleteNoteConfirmationModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteNoteConfirmationModalLabel">
+                        Are you sure you want to delete this note?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="delete-note-form" action="" method="POST">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-light">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {# ------------ #}
+    {# ------ Quote modals ------ #}
+    <div class="modal fade" id="editBookQuoteModal" tabindex="-1" role="dialog"
+         aria-labelledby="editBookQuoteModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBookQuoteModalLabel">Edit quote</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="edit-quote-form" action="" method="POST">
+                    <div class="modal-body">
+                        <textarea class="form-control" name="quote_text" id="quote_text"
+                                  placeholder="Quote..." required="required"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-light">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteBookQuoteConfirmationModal" tabindex="-1" role="dialog"
+         aria-labelledby="deleteBookQuoteConfirmationModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteBookQuoteConfirmationModalLabel">
+                        Are you sure you want to delete this note?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="delete-quote-form" action="" method="POST">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-light">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {# ------------ #}
+    {# ------ Edit book modal ------ #}
+    <div class="modal fade" id="editBookModal" tabindex="-1" role="dialog"
+         aria-labelledby="editBookModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBookModalLabel">Edit book</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="edit-book-form" action="" method="POST">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="labelEditBook" for="edit_author">Author: *</label>
+                            <input id="edit_author" name="edit_author" class="form-control" type="text"
+                                   placeholder="..." required="required">
+                        </div>
+                        <div class="form-group">
+                            <label class="labelEditBook" for="edit_title">Title: *</label>
+                            <input id="edit_title" name="edit_title" class="form-control" type="text"
+                                   placeholder="..." required="required">
+                        </div>
+                        <p class="error_form" id="error_message"></p>
+                        <div class="form-group">
+                            <label class="labelEditBook" for="isbn">ISBN: </label>
+                            <input id="isbn" name="isbn" class="form-control" type="text"
+                                   placeholder="...">
+                        </div>
+                        <div class="form-group">
+                            <label class="labelEditBook" for="edit_page_count">Page count: *</label>
+                            <input id="edit_page_count" name="edit_page_count" class="form-control" type="number"
+                                   min="1" max="11000" placeholder="..." required="required">
+                        </div>
+                        <div class="form-group" required="required">
+                            <label class="labelEditBook" for="edit_genre">Genre: </label>
+                            <select id="edit_genre" name="edit_genre" class="form-control">
+                                <option selected disabled value="invalid">Select</option>
+                                <option>Adventure</option>
+                                <option>Children's</option>
+                                <option>Cooking</option>
+                                <option>Contemporary</option>
+                                <option>Fantasy</option>
+                                <option>History</option>
+                                <option>Historical fiction</option>
+                                <option>Horror</option>
+                                <option>Humor</option>
+                                <option>Memoir</option>
+                                <option>Mystery</option>
+                                <option>Motivational/Development/Self-help</option>
+                                <option>Romance</option>
+                                <option>Science fiction</option>
+                                <option>Thriller</option>
+                                <option>Travel</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-check-label-book" for="edit_belonging_check">I own this book</label>
+                            <input id="edit_belonging_check" name="edit_belonging_check" class="form-check-input-book"
+                                   type="checkbox" value="personal">
+                        </div>
+                        <div class="form-group">
+                            <label class="labelEditBook" for="edit_rating">Rating: </label>
+                            <input id="edit_rating" name="edit_rating" class="form-control" type="number"
+                                   min="1" max="5" placeholder="...">
+                        </div>
+                        {#                        <div class="form-group">#}
+                        {#                            <label class="labelEditBook">Rating: </label>#}
+                        {#                            <div class="rating rating2">#}
+                        {#                                <a href="#5" id="5stars" title="Give 5 stars">★</a>#}
+                        {#                                <a href="#4" id="4stars" title="Give 4 stars">★</a>#}
+                        {#                                <a href="#3" id="3stars" title="Give 3 stars">★</a>#}
+                        {#                                <a href="#2" id="2stars" title="Give 2 stars">★</a>#}
+                        {#                                <a href="#1" id="1stars" title="Give 1 star">★</a>#}
+                        {#                            </div>#}
+                        {#                            <input id="ratings" type="hidden" name="ratings" value=""/>#}
+                        {#                        </div>#}
+                        <div class="form-group">
+                            <label class="labelEditBook" for="edit_start_date">Started: </label>
+                            <input id="edit_start_date" name="edit_start_date" class="form-control" type="date"
+                                   placeholder="Started">
+                        </div>
+                        <div class="form-group">
+                            <label class="labelEditBook" for="edit_finish_date">Finished: </label>
+                            <input id="edit_finish_date" name="edit_finish_date" class="form-control" type="date"
+                                   placeholder="Finished">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-light">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {# ------------
+    {# ------ Book lending modals ------ #}
+    <div class="modal fade" id="bookLendingModal" tabindex="-1" role="dialog"
+         aria-labelledby="bookLendingModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookLendingModalLabel"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="lending-form" action="" method="POST">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="labelEditBook" for="lent_to">Borrower: *</label>
+                            <input id="lent_to" name="lent_to" class="form-control" type="text"
+                                   placeholder="..." required="required">
+                        </div>
+                        <div class="form-group">
+                            <label class="labelEditBook" for="lent_date">Lent: *</label>
+                            <input id="lent_date" name="lent_date" class="form-control" type="date"
+                                   placeholder="..." required="required">
+                        </div>
+                        <div class="form-group">
+                            <label class="labelEditBook" for="returned_date">Returned: </label>
+                            <input id="returned_date" name="returned_date" class="form-control" type="date"
+                                   placeholder="...">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-light">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="deleteBookLendingConfirmationModal" tabindex="-1" role="dialog"
+         aria-labelledby="deleteBookLendingConfirmationModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteBookLendingConfirmationModalLabel">
+                        Are you sure you want to delete this lending entry?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="delete-lending-form" action="" method="POST">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-light">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {# ------------ #}
+{% endblock %}

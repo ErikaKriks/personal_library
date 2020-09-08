@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{% block main %}    
+    
+    {% if not quotes %}
+        <div class="alert" id="no_quotes">
+            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+            You do not have any quotes.
+        </div>
+    {% else %}
+        {% for quote in quotes %}
+            <div class="quote_brown_bg">
+            <img id="quote_sign" src="../static/quote_mark.gif" alt="quotes">
+            <p class="quote_text">{{ quote.quote }}</p>
+            <br>
+            {% if quote.author|length <= 100 %}
+                <span class="quote_titles"><b>Author: </b> <i>{{ quote.author }}</i></span>
+            {% else %}
+                <span class="quote_titles" title="{{ quote.author }}"><b>Author: </b> <i>{{ quote.author[:100] }}...</i></span>
+            {% endif %}
+            <br>
+            {% if quote.author|length <= 100 %}
+                <span class="quote_titles quote_titles_hover" onclick="redirectToBook('{{ quote.book_id }}')"><b>Book: </b><i>{{ quote.title }}</i></span>
+            {% else %}
+                <span class="quote_titles quote_titles_hover" title="{{ quote.title }}" onclick="redirectToBook('{{ quote.book_id }}')"><b>Book: </b><i>{{ quote.title[:100] }}...</i></span>
+            {% endif %}
+            <br>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="container_new_quote"> 
+        <h2 id="add_quote">ADD A NEW QUOTE</h2>   
+        <form id="new_quote" action="/quotes" method="post" autocomplete="off">
+            <div class="form-group" id="quote_author" >
+                <select name="author" class="form-control">
+                    <option disabled selected value = "invalid">Authors</option>
+                {% for book in books_author %}
+                    {% if book.author|length <= 100 %}
+                        <option value="{{ book.author }}">{{ book.author }}</option>
+                    {% else %}
+                        <option value="{{ book.author }}">{{ book.author[:100] }}...</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            </div>
+            <br>
+            <div class="form-group" id="quote_title">
+            <select name="book_title" class="form-control">
+                <option disabled selected value = "invalid">Books</option>
+            {% for book in books_title %}
+                {% if book.title|length <= 100 %}
+                    <option value="{{ book.title }}">{{ book.title }}</option>
+                {% else %}
+                    <option value="{{ book.author }}">{{ book.title[:100] }}...</option>
+                {% endif %}
+            {% endfor %}
+            </select>
+            </div>
+            <br>
+            <div class="form-group" id="quote_quote">
+                <textarea autocomplete="off" class="form-control" name="quote" contenteditable="true" placeholder="Type your quote" cols="30" rows="5" required></textarea>
+            </div>
+            <br>
+            <button class="btn btn-light" type="submit" id="quote_btn">+ Add</button>
+        </form>
+    </div>
+{% endblock %}

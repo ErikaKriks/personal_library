@@ -1,0 +1,271 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <!-- READING NOW -->
+    <div class="container">
+        <div class="upper_row" id="indexrow">
+            <p class="sub_title inner">READING NOW</p>
+            <button id="add_book" title="Add a new book" class="inner" onclick="localStorage.clear(); location.href = '/new-book';">
+                <img class="img_btn" src="../static/add_book.gif" alt="add a new book">
+            </button>
+        </div>
+        <div class="row">
+            {% if not books %}
+                <div class="alert" id="no_books">
+                    <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+                    You are not reading anything at the moment.
+                </div>
+            {% else %}
+                {% for book in books %}
+                    <div class="col-12 book" onclick="redirectToBook('{{ book.book_id }}')">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <img class="book_cover" src="../static/logo.png" alt="book cover">
+                            </div>
+                            <div class="col-sm-8">
+                                {% if book.author|length <= 20 %}
+                                    <p class="author" data-toggle="tooptip"><span
+                                            class="names">Author: </span>{{ book.author }}</p>
+                                {% else %}
+                                    <p class="author" data-toggle="tooptip" title="{{ book.author }}"><span
+                                            class="names">Author: </span>{{ book.author[:20] }}...</p>
+                                {% endif %}
+                                {% if book.title|length <= 20 %}
+                                    <p class="title" data-toggle="tooptip"><span
+                                            class="names">Title: </span>{{ book.title }}</p>
+                                {% else %}
+                                    <p class="title" data-toggle="tooptip" title="{{ book.title }}"><span class="names">Title: </span>{{ book.title[:20] }}...
+                                    </p>
+                                {% endif %}
+                                <p class="started"><span class="names">Started: </span>{{ book.started }}</p>
+                            </div>
+                            <div class="col-sm-1">
+                                <div class="options">
+                                    <img class="options_image"
+                                         onclick="showOptionsFor('opt{{ book.book_id }}')"
+                                         src="../static/options.svg"
+                                         alt="options"/>
+
+                                    <div id="opt{{ book.book_id }}" class="options_content">
+                                        <a data-toggle="modal"
+                                           data-target="#finishedReadingModal"
+                                           data-bookid="{{ book.book_id }}">
+                                            Finished reading
+                                        </a>
+                                        <a onclick="notReading('{{ book.book_id }}')">
+                                            Remove from "Reading now"
+                                        </a>
+                                        <a onclick="localStorage.clear(); location.href = '/book/{{ book.book_id }}';">
+                                            Book profile
+                                        </a>
+                                        <a data-toggle="modal"
+                                           data-target="#deleteBookConfirmationModal"
+                                           data-bookid="{{ book.book_id }}">
+                                            Delete book
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- LISTS -->
+    <div class="container">
+        <div class="upper_row">
+            <!-- SELECT LIST -->
+            <form action="/" id="listform" method="post">
+                <div class="form-group col-md-2">
+                    <select name="listname" id="inputList" class="form-control index_form">
+                        <option class="list_option" selected value="all">All books</option>
+                        <option class="list_option" value="read">Read books</option>
+                        <option class="list_option" value="lent">Lent out books</option>
+                        <option class="list_option" id="option_personal" value="personal">My personal books</option>
+                        <option class="list_option" id="option_notmine" value="notmine">Books that don’t belong to me
+                        </option>
+                    </select>
+                </div>
+                <!-- CHECKBOX -->
+                <div class="form-check index_form">
+                    <input name="check_value" class="form-check-input" type="checkbox" value="" id="defaultCheck1"
+                           onclick="checkValue()">
+                    <label class="form-check-label" for="defaultCheck1">
+                        Only lent out books
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="row">
+            {% if not lists %}
+                <div class="alert" id="no_books">
+                    <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+                    You do not have any books in this list yet.
+                </div>
+            {% else %}
+                {% for list in lists %}
+                    <div class="col-12 book" onclick="redirectToBook('{{ list.book_id }}')">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <img class="book_cover" src="../static/logo.png" alt="book cover">
+                            </div>
+                            <div class="col-sm">
+                                {% if list.author|length <= 20 %}
+                                    <p class="author" data-toggle="tooptip" title="{{ list.author }}"><span
+                                            class="names">Author: </span>{{ list.author }}</p>
+                                {% else %}
+                                    <p class="author" data-toggle="tooptip" title="{{ list.author }}"><span
+                                            class="names">Author: </span>{{ list.author[:20] }}...</p>
+                                {% endif %}
+                                {% if list.title|length <= 20 %}
+                                    <p class="title" data-toggle="tooptip" title="{{ list.title }}"><span class="names">Title: </span>{{ list.title }}
+                                    </p>
+                                {% else %}
+                                    <p class="title" data-toggle="tooptip" title="{{ list.title }}"><span class="names">Title: </span>{{ list.title[:20] }}...
+                                    </p>
+                                {% endif %}
+                                {% if not list.rating %}
+                                    <p class="rating_index"><span class="names">Rating: - </span></p>
+                                {% else %}
+                                    <p class="rating_index">
+                                        <span class="names">Rating: </span>
+                                        {% for i in range(list.rating) %}
+                                            <span class="stars_red">★</span>
+                                        {% endfor %}
+                                        {% for i in range(5 - (list.rating)) %}
+                                            <span class="stars_white">★</span>
+                                        {% endfor %}
+                                    </p>
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-1">
+                                <div class="options">
+                                    <img class="options_image"
+                                         onclick="showOptionsFor('lst{{ list.book_id }}')"
+                                         src="../static/options.svg"
+                                         alt="options"/>
+
+                                    <div id="lst{{ list.book_id }}" class="options_content">
+                                        {% if list.started and not list.finished %}
+                                            <a data-toggle="modal"
+                                               data-target="#finishedReadingModal"
+                                               data-bookid="{{ list.book_id }}">
+                                                Finished reading
+                                            </a>
+                                        {% endif %}
+                                        {% if not list.started %}
+                                            <a data-toggle="modal"
+                                               data-target="#readingNowModal"
+                                               data-bookid="{{ list.book_id }}">
+                                                Add to "Reading now"
+                                            </a>
+                                        {% endif %}
+                                        {% if list.started and not list.finished %}
+                                            <a onclick="notReading('{{ list.book_id }}')">
+                                                Remove from "Reading now"
+                                            </a>
+                                        {% endif %}
+                                        <a onclick="localStorage.clear(); location.href = '/book/{{ list.book_id }}';">
+                                            Book profile
+                                        </a>
+                                        <a data-toggle="modal"
+                                           data-target="#deleteBookConfirmationModal"
+                                           data-bookid="{{ list.book_id }}">
+                                            Delete book
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div class="modal fade" id="readingNowModal" tabindex="-1" role="dialog"
+         aria-labelledby="readingNowModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="readingNowModalLabel">When did you start reading?</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="/started-reading-book" method="POST">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="labelEditBookDate" for="update_start_date">Started</label>
+                            <input class="form-control" type="date" name="update_start_date" id="update_start_date"
+                                   placeholder="Started" required="required">
+                        </div>
+                        <input class="form-control hidden" type="number" name="update_book_id" id="update_book_id">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-light">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="finishedReadingModal" tabindex="-1" role="dialog"
+         aria-labelledby="finishedReadingModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="finishedReadingModalLabel">When did you finish reading?</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="/finished-reading-book" method="POST">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="labelEditBookDate" for="update_finish_date">Finished</label>
+                            <input class="form-control" type="date" name="update_finish_date" id="update_finish_date"
+                                   placeholder="Finished" required="required">
+                        </div>
+                        <input class="form-control hidden" type="number" name="update_book_id" id="update_book_id">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-light">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteBookConfirmationModal" tabindex="-1" role="dialog"
+         aria-labelledby="deleteBookConfirmationModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteBookConfirmationModalLabel">
+                        Are you sure you want to delete this book?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button id="confirmBookDeleteFromList" type="button" class="btn btn-light" data-dismiss="modal">
+                        Confirm
+                    </button>
+                    <input class="form-control hidden" type="number" name="update_book_id" id="update_book_id">
+                </div>
+            </div>
+        </div>
+    </div>
+    {# ------------ #}
+{% endblock %}
